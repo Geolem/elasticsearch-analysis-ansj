@@ -8,7 +8,7 @@ import org.ansj.elasticsearch.index.analysis.AnsjAnalyzerProvider;
 import org.ansj.elasticsearch.index.analysis.AnsjTokenizerTokenizerFactory;
 import org.ansj.elasticsearch.index.config.AnsjElasticConfigurator;
 import org.ansj.elasticsearch.rest.RestAnsjAction;
-import org.ansj.lucene7.AnsjAnalyzer;
+import org.ansj.lucene9.AnsjAnalyzer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
@@ -16,12 +16,12 @@ import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
-import org.elasticsearch.common.inject.AbstractModule;
-import org.elasticsearch.common.inject.Module;
+import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsFilter;
+import org.elasticsearch.features.NodeFeature;
 import org.elasticsearch.index.analysis.AnalyzerProvider;
 import org.elasticsearch.index.analysis.TokenizerFactory;
 import org.elasticsearch.indices.analysis.AnalysisModule;
@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public class AnalysisAnsjPlugin extends Plugin implements AnalysisPlugin, ActionPlugin {
@@ -44,8 +45,8 @@ public class AnalysisAnsjPlugin extends Plugin implements AnalysisPlugin, Action
     private static final Logger LOG = LogManager.getLogger();
 
     @Override
-    public Collection<Module> createGuiceModules() {
-        return Collections.singletonList(new AnsjModule());
+    public Collection<?> createComponents(PluginServices services) {
+        return Collections.singletonList(new AnsjElasticConfigurator(services.environment()));
     }
 
     @Override
@@ -84,14 +85,7 @@ public class AnalysisAnsjPlugin extends Plugin implements AnalysisPlugin, Action
     }
 
     @Override
-    public List<RestHandler> getRestHandlers(Settings settings, RestController restController, ClusterSettings clusterSettings, IndexScopedSettings indexScopedSettings, SettingsFilter settingsFilter, IndexNameExpressionResolver indexNameExpressionResolver, Supplier<DiscoveryNodes> nodesInCluster) {
+    public Collection<RestHandler> getRestHandlers(Settings settings, NamedWriteableRegistry namedWriteableRegistry, RestController restController, ClusterSettings clusterSettings, IndexScopedSettings indexScopedSettings, SettingsFilter settingsFilter, IndexNameExpressionResolver indexNameExpressionResolver, Supplier<DiscoveryNodes> nodesInCluster, Predicate<NodeFeature> clusterSupportsFeature) {
         return Arrays.asList(new RestAnsjAction(), new AnalyzerCatAction(), new AnsjCatAction());
-    }
-
-    private class AnsjModule extends AbstractModule {
-        @Override
-        protected void configure() {
-            bind(AnsjElasticConfigurator.class).asEagerSingleton();
-        }
     }
 }

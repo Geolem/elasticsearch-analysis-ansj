@@ -8,7 +8,7 @@ import org.ansj.library.CrfLibrary;
 import org.ansj.library.DicLibrary;
 import org.ansj.library.StopLibrary;
 import org.ansj.library.SynonymsLibrary;
-import org.ansj.lucene7.AnsjAnalyzer;
+import org.ansj.lucene9.AnsjAnalyzer;
 import org.ansj.recognition.impl.StopRecognition;
 import org.ansj.recognition.impl.SynonymsRecgnition;
 import org.ansj.splitWord.Analysis;
@@ -49,6 +49,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -67,7 +68,7 @@ public class TransportAnsjAction extends TransportSingleShardAction<AnsjRequest,
                                TransportService transportService, ActionFilters actionFilters,
                                IndexNameExpressionResolver indexNameExpressionResolver,
                                AnsjElasticConfigurator cfg) {
-        super(AnsjAction.NAME, threadPool, clusterService, transportService, actionFilters, indexNameExpressionResolver, AnsjRequest::new, ThreadPool.Names.GENERIC);
+        super(AnsjAction.NAME, threadPool, clusterService, transportService, actionFilters, indexNameExpressionResolver, AnsjRequest::new, threadPool.executor(ThreadPool.Names.GENERIC));
 
         this.cfg = cfg;
     }
@@ -271,8 +272,8 @@ public class TransportAnsjAction extends TransportSingleShardAction<AnsjRequest,
                 }
 
                 @Override
-                public String executor() {
-                    return ThreadPool.Names.SAME;
+                public Executor executor() {
+                    return TransportResponseHandler.TRANSPORT_WORKER;
                 }
             };
 
@@ -340,8 +341,8 @@ public class TransportAnsjAction extends TransportSingleShardAction<AnsjRequest,
                 }
 
                 @Override
-                public String executor() {
-                    return ThreadPool.Names.SAME;
+                public Executor executor() {
+                    return TransportResponseHandler.TRANSPORT_WORKER;
                 }
             });
         }
